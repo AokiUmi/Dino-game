@@ -663,7 +663,15 @@ void LCD_ShowPicture(u16 x1,u16 y1,u16 x2,u16 y2)
 		LCD_WR_DATA8(image[i]);
 	}			
 }
-
+void LCD_ShowPic(u16 x1, u16 y1, u16 x2, u16 y2, u8* img)
+{
+  LCD_Address_Set(x1, y1, x2, y2);
+  int w = x2 - x1 + 1, h = y2 - y1 + 1;
+  for(int i = 0;i < w * h * 2; i++)
+  {
+    LCD_WR_DATA8(img[i]);
+  }
+}
 void LCD_ShowLogo(void)
 {
 	int i;
