@@ -576,6 +576,7 @@ void LCD_ShowString(u16 x,u16 y,const u8 *p,u16 color)
         LCD_ShowChar(x,y,*p,0,color);
         x+=8;
         p++;
+		
     }  
 }
 
@@ -663,14 +664,35 @@ void LCD_ShowPicture(u16 x1,u16 y1,u16 x2,u16 y2)
 		LCD_WR_DATA8(image[i]);
 	}			
 }
-void LCD_ShowPic(u16 x1, u16 y1, u16 x2, u16 y2, u8* img)
+void LCD_ShowScreen(u16 x1, u16 y1, u16 x2, u16 y2, bool* img)
 {
-  LCD_Address_Set(x1, y1, x2, y2);
-  int w = x2 - x1 + 1, h = y2 - y1 + 1;
-  for(int i = 0;i < w * h * 2; i++)
-  {
-    LCD_WR_DATA8(img[i]);
-  }
+	LCD_Address_Set(x1, y1, x2, y2);
+	int w = x2 - x1 + 1, h = y2 - y1 + 1;
+	for(int i = 0;i < w * h * 2; i++)
+	{
+		if(img[i]==TRUE)
+			LCD_WR_DATA8(0xff);
+		else 
+			LCD_WR_DATA8(0x00);
+	}
+}
+void LCD_ShowPic(u16 x1, u16 y1, u16 x2, u16 y2, u8* img, u16 size)
+{
+	  LCD_Address_Set(x1, y1, x2, y2);
+
+	  for(int i = 0;i < size ;i++)
+	  {
+	    LCD_WR_DATA8(img[i]);
+	  }
+}
+void LCD_DeletePic(u16 x1, u16 y1, u16 x2, u16 y2)
+{
+	  LCD_Address_Set(x1, y1, x2, y2);
+		int w = x2 - x1 + 1, h = y2 - y1 + 1;
+	  for(int i = 0;i < w * h * 2 ;i++)
+	  {
+	    LCD_WR_DATA8(0x00);
+	  }
 }
 void LCD_ShowLogo(void)
 {

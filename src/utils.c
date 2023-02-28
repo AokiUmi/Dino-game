@@ -1,6 +1,6 @@
 #include "utils.h"
 #include "gd32vf103_libopt.h"
-
+#include <stdlib.h>
 /* -----------------------------
  Description: Return 1 if button number ch is pressed
  			  Return 0 otherwise
@@ -23,4 +23,10 @@ int Get_Button(int ch)
 int Get_BOOT0(void)
 {
     return (int)(gpio_input_bit_get(GPIOA, GPIO_PIN_8));
+}
+
+unsigned int Generate_U16(unsigned int lower_bound, unsigned int upper_bound, unsigned int seed) {
+    srand(seed);
+    unsigned int res = (rand() % (upper_bound - lower_bound)) + lower_bound;
+    return res;
 }

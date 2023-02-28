@@ -7,7 +7,7 @@
 #define X_MAX 160 /*0-159*/
 #define Y_MAX 80  /*0-79*/
 // some basic constants
-#define JUMP_MAX_HEIGHT 35
+#define JUMP_MAX_HEIGHT 30
 #define CACTUS_MAX_HEIGHT 20
 #define GROUND_HEIGHT 10
 #define PTER_HEIGHT 20
@@ -22,11 +22,14 @@ int getButton0 = 0;                        // bool for button0
 u16 game_run_time = 0;                     // run time when game start = score
 u16 obstacle_interval, obstacle_last_time; // time for interval and memorize when the last obstacle appear
 int judge_if_alive = 1;                    // when update image, compute if trex alive
-uint32_t diff =30;                       // decide the delay in main while-loop
+uint32_t diff =200;                       // decide the delay in main while-loop
 int count;                                 // use it to calculate how many times the loop run
 unsigned int timer = 0; // used to generate random u16
 
+bool  image0[X_MAX*Y_MAX*2]; // use two *image to make it quicker
+bool  image1[X_MAX*Y_MAX*2];
 
+bool  *image_ptr=image0;
 enum Game_Status
 {
     Home_page = 0,
@@ -112,7 +115,7 @@ Game_Information *Game_init()
 }
 void delete_game(Game_Information * game)
 {
-    for(int i=0;i<game->obstacle_number;i++)
+    for(int i=1;i<=game->obstacle_number;i++)
         free(game->obstacle[i]);
     free(game->obstacle);
     free(game->Trex);
@@ -120,13 +123,7 @@ void delete_game(Game_Information * game)
     game=NULL;
 }
 /// Step 1: input
-Game_Information * reinit_game(Game_Information * game)
-{
-	delete_game(game);
-	Game_Information * new_game=Game_init();
-	return new_game;
 
-}
 void ProcessInput()
 {
     getBoot0 = Get_BOOT0();
@@ -166,114 +163,58 @@ void init_image(bool *image) // play start time=0
     LCD_ShowPic(100,44,111,63,cactus2,sizeof(cactus2)/sizeof(unsigned char));	*/
    
 }
-void Draw() // use LCD_drawpic
+void Draw(bool *image) // use LCD_drawpic
 {
-   LCD_ShowPic(0,64,159,73,g1,sizeof(g1)/sizeof(unsigned char));
-   LCD_ShowPic(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
+    LCD_ShowScreen(0,0,X_MAX-1,Y_MAX-1,image);
 }
-unsigned char ground[10*160*2];
 void update_ground(Game_Information *game)
 {
     game->ground1_pos--;game->ground2_pos--;
     if(game->ground1_pos==-160)
     {
-       	game->ground1_pos = INITIAL_GROUND1_POS;
-    	game->ground2_pos = INITIAL_GROUND2_POS;
+        \\
     }
-    for(int x=0;x<160*2;x++)
-		for(int y=0;y<10;y++)
-	{
-		if(x+game->ground1_pos>=0 && x+game->ground1_pos< 160*2)
-		ground[y*160*2+x+game->ground1_pos]=g1[y*160*2+x];
-		if(x+game->ground2_pos>=0 && x+game->ground2_pos< 160*2)
-		ground[y*160*2+x+game->ground2_pos]=g1[y*160*2+x];
-	}
-    LCD_ShowPic(0,64,159,73,ground,sizeof(ground)/sizeof(unsigned char));
-    
-}
-
-void reorder(Game_Information *game)
-{
-    for(int i=1 ;i<game->obstacle_number ;i++)// 1->0 2->1
-    {
-        game->obstacle[i-1]->object_status=game->obstacle[i]->object_status;
-        game->obstacle[i-1]->x=game->obstacle[i]->x;
-    }
-	return;
+    LCD_ShowPic(game->ground1_pos,64,game->ground1_pos+159,73,g1,sizeof(g1)/sizeof(unsigned char));
+    LCD_ShowPic(game->ground2_pos,64,game->ground1_pos+159,73,g2,sizeof(g2)/sizeof(unsigned char));
 }
 void update_obstracle(Game_Information *game)
 {
- 	if(game->obstacle[0]->x==0)//delete obstacle
+ 	if(judge(game->obstacle[0]))//delete obstacle
     {
-    	if(game->obstacle[0]->object_status==Cactus_1)
-    		LCD_DeletePic(0,44,11,63,cactus1);
-    	else if(game->obstacle[0]->object_status==Cactus_2)
-    		LCD_DeletePic(0,44,11,63,cactus2);
-    	else if(game->obstacle[0]->object_status==Pter_1)
-    		LCD_DeletePic(0,26,19,45,pter1);
-    	else LCD_DeletePic(0,26,19,45,pter2);
-        reorder(game); // 1->0 2->1
+        reorder(game->obstacle); // 1->0 2->1
         game->obstacle_number--;
-        game->obstacle=(Obstacle_Information **)realloc(game->obstacle,game->obstacle_number*sizeof(Obstacle_Information *));
+        game->obstacle=realloc();
     }
-    for(int i=0;i< game->obstacle_number;i++)//different obstacle
+    for(int i=1;i<= game->obstacle_number;i++)
     {
         game->obstacle[i]->x--;
         if(game->obstacle[i]->object_status==Cactus_1)
         {
-        	LCD_DeletePic(game->obstacle[i]->x+1,44,game->obstacle[i]->x+12,63,cactus1);	
             LCD_ShowPic(game->obstacle[i]->x,44,game->obstacle[i]->x+11,63,cactus1,sizeof(cactus1)/sizeof(unsigned char));	
-        }
-        else if(game->obstacle[i]->object_status==Cactus_2)
-        {
-        	LCD_DeletePic(game->obstacle[i]->x+1,44,game->obstacle[i]->x+12,63,cactus2);	
-            LCD_ShowPic(game->obstacle[i]->x,44,game->obstacle[i]->x+11,63,cactus2,sizeof(cactus2)/sizeof(unsigned char));	
         }
         else if(game->obstacle[i]->object_status==Pter_1)
         {
-            LCD_DeletePic(game->obstacle[i]->x+1,26,game->obstacle[i]->x+20,45,pter1);	
-            LCD_ShowPic(game->obstacle[i]->x,26,game->obstacle[i]->x+19,45,pter2,sizeof(pter2)/sizeof(unsigned char));
-            game->obstacle[i]->object_status=Pter_2;
-        }
-        else if(game->obstacle[i]->object_status==Pter_2)
-        {
-            LCD_DeletePic(game->obstacle[i]->x+1,26,game->obstacle[i]->x+20,45,pter2);	
-            LCD_ShowPic(game->obstacle[i]->x,26,game->obstacle[i]->x+19,45,pter1,sizeof(pter1)/sizeof(unsigned char));
-            game->obstacle[i]->object_status=Pter_1;
+            LCD_ShowPic(new_x,new_y,new_x+19,new_y+19,pter2,sizeof(pter2)/sizeof(unsigned char));	
         }
     }
     if(game_run_time-obstacle_last_time==obstacle_interval) // you should update new obstacle
     {
         obstacle_last_time=game_run_time;
-        obstacle_interval=Generate_U16(75,100,timer);
+        obstacle_interval=Generate_U16(20,30,timer);
         int x=Generate_U16(0,10000,timer);
         if(x%3==0)
         {
             LCD_ShowPic(OBSTACLE_START_POS,44,OBSTACLE_START_POS+11,63,cactus1,sizeof(cactus1)/sizeof(unsigned char));	
             game->obstacle_number++;
-            game->obstacle=(Obstacle_Information **)realloc(game->obstacle,game->obstacle_number*sizeof(Obstacle_Information *));
-            game->obstacle[game->obstacle_number-1]=(Obstacle_Information *)malloc(sizeof(Obstacle_Information));
+            game->obstacle=realloc();
             game->obstacle[game->obstacle_number-1]->x=OBSTACLE_START_POS;
             game->obstacle[game->obstacle_number-1]->object_status=Cactus_1;
         }
-        else if(x%3==1) 
-        {
-            LCD_ShowPic(OBSTACLE_START_POS,44,OBSTACLE_START_POS+11,63,cactus2,sizeof(cactus2)/sizeof(unsigned char));	
-            game->obstacle_number++;
-            game->obstacle=(Obstacle_Information **)realloc(game->obstacle,game->obstacle_number*sizeof(Obstacle_Information *));
-            game->obstacle[game->obstacle_number-1]=(Obstacle_Information *)malloc(sizeof(Obstacle_Information));
-            game->obstacle[game->obstacle_number-1]->x=OBSTACLE_START_POS;
-            game->obstacle[game->obstacle_number-1]->object_status=Cactus_2;
-        }
         else 
         {
-            LCD_ShowPic(OBSTACLE_START_POS,26,OBSTACLE_START_POS+19,45,pter1,sizeof(pter1)/sizeof(unsigned char));	
-            game->obstacle_number++;
-            game->obstacle=(Obstacle_Information **)realloc(game->obstacle,game->obstacle_number*sizeof(Obstacle_Information *));
-            game->obstacle[game->obstacle_number-1]=(Obstacle_Information *)malloc(sizeof(Obstacle_Information));
-            game->obstacle[game->obstacle_number-1]->x=OBSTACLE_START_POS;
-            game->obstacle[game->obstacle_number-1]->object_status=Pter_1;
+
         }
+        
     }
 }
 
@@ -346,107 +287,6 @@ int make_choice()
     }
     return now_choice;
 }
-void judge_trex_alive(Game_Information *game)
-{
-	if(game->obstacle_number==0)return;
-    if((game->Trex->trex_status==Walk_1 || game->Trex->trex_status==Walk_2 || game->Trex->trex_status==Jump)&& game->obstacle[0]->x>44)
-        return;
-    if((game->Trex->trex_status==Squat_1 || game->Trex->trex_status==Squat_2) && game->obstacle[0]->x>51)
-    	return;
-    bool  **image; // use *image to judge 52*2 *64
-	image=(bool **)malloc((52*2)*sizeof(bool *));
-	for(int i=0 ;i< 52*2 ;i++)
-	{
-		image[i]=(bool *)malloc(sizeof(bool)*64);
-		for(int j=0;j<64;j++)	
-			image[i][j]=FALSE;
-	}
-    	
-    if(game->Trex->trex_status==Walk_1 || game->Trex->trex_status==Walk_2 || game->Trex->trex_status==Jump )//Initial trex pos
-    {
-        int x0=25,y0;
-        if(game->Trex->trex_status==Jump)   
-            y0=44-game->Trex->jump_height;
-        else y0=44;
-        for(int x=0;x<20*2;x++)
-            for(int y=0;y<20;y++)
-            {
-                if(game->Trex->trex_status==Walk_1&&trex1[y*20*2+x]==0xff)
-                    image[x+x0][y+y0]=TRUE;
-                else if(game->Trex->trex_status==Walk_2&&trex2[y*20*2+x]==0xff)
-                    image[x+x0][y+y0]=TRUE;
-                else if(game->Trex->trex_status==Jump&&trex3[y*20*2+x]==0xff)
-                    image[x+x0][y+y0]=TRUE;
-            }
-                
-            
-    }
-    else // squat
-    {
-        int x0=25,y0=44;
-        for(int x=0;x<27*2;x++)
-            for(int y=0;y<20;y++)
-            {
-                if(trex4[y*27*2+x]==0xff) 
-                    image[x+x0][y+y0]=TRUE;
-            }
-               
-    }
-    if(game->obstacle[0]->object_status==Cactus_1 || game->obstacle[0]->object_status==Cactus_2) //cactus1 or cactus2
-    {
-        int x0=game->obstacle[0]->x;
-        int y0=44;
-        for(int x=0;x<12*2;x++)
-            for(int y=0;y<20;y++)
-            {
-                if(x+x0>=0 && x+x0 < 52*2 && y+y0>=0 && y+y0 < 64)
-                    if(image[x+x0][y+y0]==TRUE)
-                    {
-                        if(game->obstacle[0]->object_status==Cactus_1 &&cactus1[y*12*2+x]==0xff )
-                        {
-                            judge_if_alive=0;
-                            break;
-                        }
-                        else if(game->obstacle[0]->object_status==Cactus_2 &&cactus2[y*12*2+x]==0xff )
-                        {
-                            judge_if_alive=0;
-                            break;
-                        }
-                    }
-                        
-            }
-    }
-    else //pter1 or pter2
-    {
-        int x0=game->obstacle[0]->x;
-        int y0=26;
-        for(int x=0;x<20*2;x++)
-            for(int y=0;y<20;y++)
-            {
-                if(x+x0>=0 && x+x0 < 52*2 && y+y0>=0 && y+y0 < 64)
-                    if(image[x+x0][y+y0]==TRUE)
-                    {
-                        if(game->obstacle[0]->object_status==Pter_1 &&pter1[y*20*2+x]==0xff )
-                        {
-                            judge_if_alive=0;
-                            break;
-                        }
-                        else if(game->obstacle[0]->object_status==Pter_2 &&pter2[y*20*2+x]==0xff )
-                        {
-                            judge_if_alive=0;
-                            break;
-                        }
-                    }
-                        
-            }
-    }
-    
-//	LCD_Show_specialPic(0,0,51,63,image);
-	for(int i=0 ;i< 52*2 ;i++)
-		free(image[i]);
-	
-    free(image);
-}
 
 
 int main(void)
@@ -454,11 +294,13 @@ int main(void)
     
     IO_init(); // init OLED
     Game_Information *Game = Game_init();
-    
-
+    memset(image0,FASLE,sizeof(image0));
+    memset(image1,FASLE,sizeof(image1));
+    init_img(image_ptr);
+    startmenu();
+    delay_1ms(10);
     timer = (timer + 10) % U16_MAX;
     // every zhen
-    startmenu();
     obstacle_last_time = 0;
     obstacle_interval = 16;
     int last_state = Game->state;
@@ -487,8 +329,8 @@ int main(void)
                 if (!choice)
                 {
                     LCD_Clear(BLACK);
-                    Draw();
-                    delay_1ms(10);
+                    Draw(image_ptr);
+                    delay_1ms(1000);
                 }
                    
             }
@@ -497,35 +339,30 @@ int main(void)
         {
         	
             // update four part: 1 trex,2 obstracle, 3 ground ,4 score
-           // LCD_Clear(BLACK);
+            LCD_Clear(BLACK);
             last_state = Game->state;
-           // bool *target_img = (image_ptr == image0) ? image1 : image0; 
-            update_ground(Game);
-            update_obstracle(Game);
+            bool *target_img = (image_ptr == image0) ? image1 : image0; 
+            update_ground(Game, target_img);
+            update_obstracle(Game,target_img);
             // update trex
-            if (getButton0 == 1 && ( Game->Trex->trex_status == Walk_1 || Game->Trex->trex_status == Walk_2 ))// Jump start
+            if (getButton0 == 1) // Jump start
             {
                 Game->Trex->trex_status=Jump;
                 Game->Trex->if_rise=1;
                 Game->Trex->jump_height=1;
-                if(Game->Trex->trex_status == Walk_1 )
-                	LCD_DeletePic(25,44,44,63,trex1);
-				else LCD_DeletePic(25,44,44,63,trex2);
-                LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
+                LCD_ShowPic(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
             }
-            else if (getButton1 == 1 && Game->Trex->trex_status != Jump) // Squat
+            else if (getButton1 == 1) // Squat
             {
                 if(Game->Trex->trex_status== Walk_1 ||Game->Trex->trex_status== Walk_2|| Game->Trex->trex_status== Squat_2)
                 {
                     Game->Trex->trex_status=Squat_1;
-                    LCD_DeletePic(25,44,51,63,trex5);
-                    LCD_ShowPic_2(25,44,51,63,trex4,sizeof(trex4)/sizeof(unsigned char));
+                    LCD_ShowPic(25,44,51,63,trex4,sizeof(trex4)/sizeof(unsigned char));
                 }
                 else if(Game->Trex->trex_status== Squat_1)
                 {
                     Game->Trex->trex_status=Squat_2;
-                    LCD_DeletePic(25,44,51,63,trex4);
-                    LCD_ShowPic_2(25,44,51,63,trex5,sizeof(trex5)/sizeof(unsigned char));
+                    LCD_ShowPic(25,44,51,63,trex5,sizeof(trex5)/sizeof(unsigned char));
                 }
                
             }
@@ -533,17 +370,13 @@ int main(void)
             {
                 if(Game->Trex->trex_status== Walk_1 ||Game->Trex->trex_status== Walk_2  )
                 {
-                    if(Game->Trex->trex_status== Walk_1)
+                    if()
                     {
-                    	LCD_DeletePic(25,44,44,63,trex1);
-						LCD_ShowPic_2(25,44,44,63,trex2,sizeof(trex2)/sizeof(unsigned char));
-						Game->Trex->trex_status= Walk_2;
+
                     }
                     else 
                     {
-                    	LCD_DeletePic(25,44,44,63,trex2);
-                    	LCD_ShowPic_2(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
-						Game->Trex->trex_status= Walk_1;
+
                     }
                 }
                 else if(Game->Trex->trex_status== Jump)
@@ -553,14 +386,10 @@ int main(void)
                         if(Game->Trex->jump_height == JUMP_MAX_HEIGHT)// magin
                         {
                             Game->Trex->if_rise=-1;
-                            LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height,trex3);
                             Game->Trex->jump_height--;
-                            LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
                             //LCD (trex3)
                         }
-                        LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height,trex3);
                         Game->Trex->jump_height++;
-                        LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
                         //LCD(trex3)
                     }
                     else // down
@@ -570,34 +399,13 @@ int main(void)
                             Game->Trex->if_rise=0;
                             Game->Trex->jump_height--;
                             Game->Trex->trex_status=Walk_1;
-                            LCD_DeletePic(25,43,44,62,trex3);
-                            LCD_ShowPic_2(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
                             //LCD(trex1);
                         }
-                        LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height,trex3);
                         Game->Trex->jump_height--;
-                        LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
                         //LCD(trex3)
                     }
                 }
-                else if(Game->Trex->trex_status==Squat_1 || Game->Trex->trex_status==Squat_2)
-                {
-                	if(Game->Trex->trex_status== Squat_1)
-                    {
-                    	LCD_DeletePic(25,44,51,63,trex4);
-						LCD_ShowPic_2(25,44,44,63,trex2,sizeof(trex2)/sizeof(unsigned char));
-						Game->Trex->trex_status= Walk_2;
-                    }
-                    else 
-                    {
-                    	LCD_DeletePic(25,44,51,63,trex5);
-                    	LCD_ShowPic_2(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
-						Game->Trex->trex_status= Walk_1;
-                    }
-                }
             }
-            
-            judge_trex_alive(Game);
             if (!judge_if_alive)
             {
                 Game->state = End_page; // update status
@@ -607,9 +415,8 @@ int main(void)
             else
                 game_run_time++;
             // draw
-            delay_1ms(10);
-            //Draw(target_img);
-          	//image_ptr = (image_ptr == image0) ? image1 : image0; // switch buffer
+            Draw(target_img);
+          	image_ptr = (image_ptr == image0) ? image1 : image0; // switch buffer
             show_score(game_run_time);//this is a fucntion in assembly
             if (!judge_if_alive)
             	delay_1ms(600);
@@ -628,10 +435,10 @@ int main(void)
             {
                 int choice=make_choice();
                 delay_1ms(10);
-                timer = (timer + 1000) % U16_MAX;
+                timer = (timer + 10) % U16_MAX;
                 if(choice)
-                    diff=18;
-                else diff=30;
+                    diff=100;
+                else diff=200;
                 Game->state = Home_page; // uodate status
             }
         }
@@ -651,14 +458,11 @@ int main(void)
                 timer = (timer + 10) % U16_MAX;
                 if(!choice)//choose to retry
                 {
-                    Game = reinit_game(Game);// uodate status
-                    obstacle_last_time = 0;
-    				obstacle_interval = 16;
+                    Game->state = Home_page; // uodate status
                     game_run_time=0;
-                    timer = (timer + 10000) % U16_MAX;
                     count=0;
                     judge_if_alive=1;
-                    diff=30;
+                    diff=200;
                    
                 }
                 else //quit game
@@ -672,8 +476,9 @@ int main(void)
         if (Game->state == Play_page)
         {
            
-            delay_1ms(diff);
-            timer = (timer + diff*10) % U16_MAX;
+            
+                delay_1ms(diff);
+                timer = (timer + diff) % U16_MAX;
                 
             
         }
@@ -681,4 +486,7 @@ int main(void)
     // Game Over
     LCD_Clear(BLACK);
     delete_game(Game);
+
+
+    return 0;
 }

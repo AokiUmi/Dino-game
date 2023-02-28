@@ -1,12 +1,12 @@
 .data
-    dino: .string "Dino Game"
-    play: .string "Play"
+    hard: .string "Hard"
+    easy: .string "Easy"
     settings: .string "Settings"
 
 .section .text
-.globl startmenu
-.type startmenu, @function
-startmenu:
+.globl settingsmenu
+.type settingsmenu, @function
+settingsmenu:
     addi sp, sp, -52
     # Save S-reg
     sw s0, 0(sp)
@@ -32,37 +32,37 @@ startmenu:
     li a1, 2        
     li a2, 157      
     li a3, 77       
-    li a4, 0xF800  
+    li a4, 0xFFFE   
     jal LCD_DrawRectangle
 
     li a0, 6        
     li a1, 6        
     li a2, 153      
     li a3, 73       
-    li a4, 0xFFFE   
+    li a4, 0xF800  
     jal LCD_DrawRectangle
     #title
-    la s1, dino
-    li a0, 45 #x
+    la s1, settings
+    li a0, 47 #x
     li a1, 15 #y
     mv a2, s1
     li a3, 0x3333FF
     jal LCD_ShowString
 
-    #play
-    la s1, play
+    #easy
+    la s1, easy
     li a0, 30 #x
     li a1, 40 #y
     mv a2, s1
     li a3, 0x4F0D5C 
     jal LCD_ShowString
 
-    #settings
-    la s1, settings
-    li a0, 80 #x
+    #hard
+    la s1, hard
+    li a0, 90 #x
     li a1, 40 #y
     mv a2, s1
-    li a3, 0xFFFE
+    li a3, 0xFFFE  
     jal LCD_ShowString
 
     # #######################################

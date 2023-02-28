@@ -1,12 +1,12 @@
 .data
-    dino: .string "Dino Game"
-    play: .string "Play"
-    settings: .string "Settings"
+    retry: .string "Retry"
+    quit: .string "Quit"
+    score: .string "Score: "
 
 .section .text
-.globl startmenu
-.type startmenu, @function
-startmenu:
+.globl endmenu
+.type endmenu, @function
+endmenu:
     addi sp, sp, -52
     # Save S-reg
     sw s0, 0(sp)
@@ -27,42 +27,53 @@ startmenu:
     li a0, 0
     jal LCD_Clear
 
-    
+    mv s0, a0 # store your score number
+    mv s1, a1 # the bit of num
+
+
     li a0, 2        
     li a1, 2        
     li a2, 157      
     li a3, 77       
-    li a4, 0xF800  
+    li a4, 0x07FF 
     jal LCD_DrawRectangle
 
     li a0, 6        
     li a1, 6        
     li a2, 153      
     li a3, 73       
-    li a4, 0xFFFE   
+    li a4, 0x07FF   
     jal LCD_DrawRectangle
-    #title
-    la s1, dino
-    li a0, 45 #x
+    #title score
+    la s1, score
+    li a0, 27 #x
     li a1, 15 #y
     mv a2, s1
     li a3, 0x3333FF
     jal LCD_ShowString
 
-    #play
-    la s1, play
+    #number of score
+    li a0, 38 #x
+    li a1, 15 #y
+    mv a2, s0 # the exact num
+    mv a3, s1 # the bit of num
+    li a4, 0x3333FF
+    jal LCD_ShowNum
+
+    #retry
+    la s1, retry
     li a0, 30 #x
     li a1, 40 #y
     mv a2, s1
-    li a3, 0x4F0D5C 
+    li a3, 0x00FFFF
     jal LCD_ShowString
 
-    #settings
-    la s1, settings
-    li a0, 80 #x
+    #quit
+    la s1, quit
+    li a0, 90 #x
     li a1, 40 #y
     mv a2, s1
-    li a3, 0xFFFE
+    li a3, 0x00FFFF
     jal LCD_ShowString
 
     # #######################################

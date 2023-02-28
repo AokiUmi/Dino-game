@@ -22,7 +22,7 @@ int getButton0 = 0;                        // bool for button0
 u16 game_run_time = 0;                     // run time when game start = score
 u16 obstacle_interval, obstacle_last_time; // time for interval and memorize when the last obstacle appear
 int judge_if_alive = 1;                    // when update image, compute if trex alive
-uint32_t diff =30;                       // decide the delay in main while-loop
+uint32_t diff =35;                       // decide the delay in main while-loop
 int count;                                 // use it to calculate how many times the loop run
 unsigned int timer = 0; // used to generate random u16
 
@@ -196,6 +196,7 @@ void reorder(Game_Information *game)
 {
     for(int i=1 ;i<game->obstacle_number ;i++)// 1->0 2->1
     {
+    	LCD_DeletePic(0,23,19,63);
         game->obstacle[i-1]->object_status=game->obstacle[i]->object_status;
         game->obstacle[i-1]->x=game->obstacle[i]->x;
     }
@@ -205,13 +206,6 @@ void update_obstracle(Game_Information *game)
 {
  	if(game->obstacle[0]->x==0)//delete obstacle
     {
-    	if(game->obstacle[0]->object_status==Cactus_1)
-    		LCD_DeletePic(0,44,11,63,cactus1);
-    	else if(game->obstacle[0]->object_status==Cactus_2)
-    		LCD_DeletePic(0,44,11,63,cactus2);
-    	else if(game->obstacle[0]->object_status==Pter_1)
-    		LCD_DeletePic(0,26,19,45,pter1);
-    	else LCD_DeletePic(0,26,19,45,pter2);
         reorder(game); // 1->0 2->1
         game->obstacle_number--;
         game->obstacle=(Obstacle_Information **)realloc(game->obstacle,game->obstacle_number*sizeof(Obstacle_Information *));
@@ -221,23 +215,23 @@ void update_obstracle(Game_Information *game)
         game->obstacle[i]->x--;
         if(game->obstacle[i]->object_status==Cactus_1)
         {
-        	LCD_DeletePic(game->obstacle[i]->x+1,44,game->obstacle[i]->x+12,63,cactus1);	
+        	LCD_DeletePic(game->obstacle[i]->x+1,44,game->obstacle[i]->x+12,63);	
             LCD_ShowPic(game->obstacle[i]->x,44,game->obstacle[i]->x+11,63,cactus1,sizeof(cactus1)/sizeof(unsigned char));	
         }
         else if(game->obstacle[i]->object_status==Cactus_2)
         {
-        	LCD_DeletePic(game->obstacle[i]->x+1,44,game->obstacle[i]->x+12,63,cactus2);	
+        	LCD_DeletePic(game->obstacle[i]->x+1,44,game->obstacle[i]->x+12,63);	
             LCD_ShowPic(game->obstacle[i]->x,44,game->obstacle[i]->x+11,63,cactus2,sizeof(cactus2)/sizeof(unsigned char));	
         }
         else if(game->obstacle[i]->object_status==Pter_1)
         {
-            LCD_DeletePic(game->obstacle[i]->x+1,26,game->obstacle[i]->x+20,45,pter1);	
+            LCD_DeletePic(game->obstacle[i]->x+1,26,game->obstacle[i]->x+20,45);	
             LCD_ShowPic(game->obstacle[i]->x,26,game->obstacle[i]->x+19,45,pter2,sizeof(pter2)/sizeof(unsigned char));
             game->obstacle[i]->object_status=Pter_2;
         }
         else if(game->obstacle[i]->object_status==Pter_2)
         {
-            LCD_DeletePic(game->obstacle[i]->x+1,26,game->obstacle[i]->x+20,45,pter2);	
+            LCD_DeletePic(game->obstacle[i]->x+1,26,game->obstacle[i]->x+20,45);	
             LCD_ShowPic(game->obstacle[i]->x,26,game->obstacle[i]->x+19,45,pter1,sizeof(pter1)/sizeof(unsigned char));
             game->obstacle[i]->object_status=Pter_1;
         }
@@ -508,24 +502,19 @@ int main(void)
                 Game->Trex->trex_status=Jump;
                 Game->Trex->if_rise=1;
                 Game->Trex->jump_height=1;
-                if(Game->Trex->trex_status == Walk_1 )
-                	LCD_DeletePic(25,44,44,63,trex1);
-				else LCD_DeletePic(25,44,44,63,trex2);
-                LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
+                LCD_ShowPic(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
             }
             else if (getButton1 == 1 && Game->Trex->trex_status != Jump) // Squat
             {
                 if(Game->Trex->trex_status== Walk_1 ||Game->Trex->trex_status== Walk_2|| Game->Trex->trex_status== Squat_2)
                 {
                     Game->Trex->trex_status=Squat_1;
-                    LCD_DeletePic(25,44,51,63,trex5);
-                    LCD_ShowPic_2(25,44,51,63,trex4,sizeof(trex4)/sizeof(unsigned char));
+                    LCD_ShowPic(25,44,51,63,trex4,sizeof(trex4)/sizeof(unsigned char));
                 }
                 else if(Game->Trex->trex_status== Squat_1)
                 {
                     Game->Trex->trex_status=Squat_2;
-                    LCD_DeletePic(25,44,51,63,trex4);
-                    LCD_ShowPic_2(25,44,51,63,trex5,sizeof(trex5)/sizeof(unsigned char));
+                    LCD_ShowPic(25,44,51,63,trex5,sizeof(trex5)/sizeof(unsigned char));
                 }
                
             }
@@ -535,14 +524,12 @@ int main(void)
                 {
                     if(Game->Trex->trex_status== Walk_1)
                     {
-                    	LCD_DeletePic(25,44,44,63,trex1);
-						LCD_ShowPic_2(25,44,44,63,trex2,sizeof(trex2)/sizeof(unsigned char));
+						LCD_ShowPic(25,44,44,63,trex2,sizeof(trex2)/sizeof(unsigned char));
 						Game->Trex->trex_status= Walk_2;
                     }
                     else 
                     {
-                    	LCD_DeletePic(25,44,44,63,trex2);
-                    	LCD_ShowPic_2(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
+                    	LCD_ShowPic(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
 						Game->Trex->trex_status= Walk_1;
                     }
                 }
@@ -553,14 +540,14 @@ int main(void)
                         if(Game->Trex->jump_height == JUMP_MAX_HEIGHT)// magin
                         {
                             Game->Trex->if_rise=-1;
-                            LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height,trex3);
+                            LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height);
                             Game->Trex->jump_height--;
-                            LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
+                            LCD_ShowPic(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
                             //LCD (trex3)
                         }
-                        LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height,trex3);
+                        LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height);
                         Game->Trex->jump_height++;
-                        LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
+                        LCD_ShowPic(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
                         //LCD(trex3)
                     }
                     else // down
@@ -570,13 +557,12 @@ int main(void)
                             Game->Trex->if_rise=0;
                             Game->Trex->jump_height--;
                             Game->Trex->trex_status=Walk_1;
-                            LCD_DeletePic(25,43,44,62,trex3);
-                            LCD_ShowPic_2(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
+                            LCD_ShowPic(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
                             //LCD(trex1);
                         }
-                        LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height,trex3);
+                        LCD_DeletePic(25,44-Game->Trex->jump_height,51,63-Game->Trex->jump_height);
                         Game->Trex->jump_height--;
-                        LCD_ShowPic_2(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
+                        LCD_ShowPic(25,44-Game->Trex->jump_height,44,63-Game->Trex->jump_height,trex3,sizeof(trex3)/sizeof(unsigned char));
                         //LCD(trex3)
                     }
                 }
@@ -584,14 +570,14 @@ int main(void)
                 {
                 	if(Game->Trex->trex_status== Squat_1)
                     {
-                    	LCD_DeletePic(25,44,51,63,trex4);
-						LCD_ShowPic_2(25,44,44,63,trex2,sizeof(trex2)/sizeof(unsigned char));
+                    	LCD_DeletePic(25,44,51,63);
+						LCD_ShowPic(25,44,44,63,trex2,sizeof(trex2)/sizeof(unsigned char));
 						Game->Trex->trex_status= Walk_2;
                     }
                     else 
                     {
-                    	LCD_DeletePic(25,44,51,63,trex5);
-                    	LCD_ShowPic_2(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
+                    	LCD_DeletePic(25,44,51,63);
+                    	LCD_ShowPic(25,44,44,63,trex1,sizeof(trex1)/sizeof(unsigned char));
 						Game->Trex->trex_status= Walk_1;
                     }
                 }
@@ -630,8 +616,8 @@ int main(void)
                 delay_1ms(10);
                 timer = (timer + 1000) % U16_MAX;
                 if(choice)
-                    diff=18;
-                else diff=30;
+                    diff=22;
+                else diff=35;
                 Game->state = Home_page; // uodate status
             }
         }
@@ -658,7 +644,7 @@ int main(void)
                     timer = (timer + 10000) % U16_MAX;
                     count=0;
                     judge_if_alive=1;
-                    diff=30;
+                    diff=35;
                    
                 }
                 else //quit game
@@ -681,4 +667,10 @@ int main(void)
     // Game Over
     LCD_Clear(BLACK);
     delete_game(Game);
+    
+    
+    
+
+
+    return 0;
 }
